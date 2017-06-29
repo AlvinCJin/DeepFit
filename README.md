@@ -1,2 +1,2 @@
 # DeepFit
-Matching candidates and employers on skillset and culture profile by using Natural Language Processing, and Deep Learning technologies.
+Matching resumes with job descriptions on skills and culture fit by using AI technologies, e.g. Natural Language Processing, Machine Learning, and Deep Learning.
