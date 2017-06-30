@@ -17,6 +17,8 @@ object Dependencies {
   val sparkML = "org.apache.spark" %% "spark-mllib" % versions("spark")
   val sparkKafka = "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % versions("spark")
 
+  val tikaParser =  "org.apache.tika" % "tika-parsers" % "1.4"
+  val tikaCore =  "org.apache.tika" % "tika-core" % "1.4"
 
   val config = "com.typesafe" % "config" % "1.3.1"
   //Test
@@ -36,7 +38,7 @@ object Dependencies {
 
   val test = Seq(specsCore, specsJunit, scalaTest)
 
-  val utils = Seq(config)
+  val utils = Seq(tikaParser, tikaCore, config)
 
   val mainDeps = spark ++ utils
 
