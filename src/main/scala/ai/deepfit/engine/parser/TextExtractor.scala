@@ -132,7 +132,7 @@ class TextExtractor {
 
   def renderDirToFiles(file: File, odir: File, data: Map[DocPart.Value, String]): Unit = {
 
-    //remove the original suffix and replaced by .txt
+    //remove the original suffix and replaced by txt
     val ext = FilenameUtils.getExtension(file.getName)
     val ofname = file.getName().replaceAll(ext, "txt")
     val writer = new PrintWriter(new FileWriter(new File(odir, ofname)), true)
