@@ -2,18 +2,17 @@ package ai.deepfit.engine.parser
 
 import ai.deepfit.engine.config.Config
 import java.io.{File, FileInputStream, FileWriter, InputStream, PrintWriter}
-import scala.collection.JavaConversions.asScalaIterator
 
+import scala.collection.JavaConversions.asScalaIterator
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
 import org.apache.commons.io.filefilter.{DirectoryFileFilter, WildcardFileFilter}
-
 import org.apache.tika.exception.TikaException
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.apache.tika.parser.{AutoDetectParser, ParseContext, Parser}
 import org.apache.tika.parser.microsoft.OfficeParser
 import org.apache.tika.parser.pdf.PDFParser
 import org.apache.tika.parser.txt.TXTParser
-import org.apache.tika.sax.WriteOutContentHandler
+import org.apache.tika.sax.{ToXMLContentHandler, WriteOutContentHandler}
 
 
 /**
@@ -74,7 +73,7 @@ class TextExtractor {
 
     try {
       istream = new FileInputStream(file)
-      val handler = new WriteOutContentHandler(-1)
+      val handler = new ToXMLContentHandler//new WriteOutContentHandler(-1)
       val metadata = new Metadata()
       val parser = parsers(detectFileType(file))
       val ctx = new ParseContext()
@@ -134,7 +133,7 @@ class TextExtractor {
 
     //remove the original suffix and replaced by txt
     val ext = FilenameUtils.getExtension(file.getName)
-    val ofname = file.getName().replaceAll(ext, "txt")
+    val ofname = file.getName().replaceAll(ext, "html")
     val writer = new PrintWriter(new FileWriter(new File(odir, ofname)), true)
 
     writer.println(data(DocPart.Body))

@@ -8,9 +8,8 @@ package ai.deepfit.engine.app
 
 import java.util.Properties
 
-import edu.stanford.nlp.ling.CoreAnnotations.{LemmaAnnotation, SentencesAnnotation, TokensAnnotation}
+import edu.stanford.nlp.ling.CoreAnnotations.{LemmaAnnotation, NamedEntityTagAnnotation, SentencesAnnotation, TokensAnnotation}
 import edu.stanford.nlp.pipeline.{Annotation, StanfordCoreNLP}
-
 import org.apache.spark.ml.feature.{CountVectorizer, IDF}
 import org.apache.spark.mllib.linalg.distributed.RowMatrix
 import org.apache.spark.mllib.linalg.{Matrix, SingularValueDecomposition}
@@ -46,7 +45,8 @@ class AssembleDocumentTermMatrix(private val spark: SparkSession) extends Serial
 
   def createNLPPipeline(): StanfordCoreNLP = {
     val props = new Properties()
-    props.put("annotators", "tokenize, ssplit, pos, lemma")
+    props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, regexner, entitymentions")
+    //props.put("regexner.mapping", "org/foo/resources/jg-regexner.txt");
     new StanfordCoreNLP(props)
   }
 
@@ -73,6 +73,9 @@ class AssembleDocumentTermMatrix(private val spark: SparkSession) extends Serial
       if (lemma.length > 2 && !stopWords.contains(lemma) && isOnlyLetters(lemma)) {
         lemmas += lemma.toLowerCase
       }
+
+      val ne = token.get(classOf[NamedEntityTagAnnotation])
+      println(lemma + " : " + ne)
     }
     lemmas
   }

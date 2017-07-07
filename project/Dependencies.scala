@@ -22,8 +22,8 @@ object Dependencies {
 
   val config = "com.typesafe" % "config" % "1.3.1"
 
-  val corenlp = "edu.stanford.nlp" % "stanford-corenlp" % "3.7.0"
-  val corenlpModel = "edu.stanford.nlp" % "stanford-corenlp" % "3.7.0" classifier "models"
+  val corenlp = "edu.stanford.nlp" % "stanford-corenlp" % "3.8.0"
+  val corenlpModel = "edu.stanford.nlp" % "stanford-corenlp" % "3.8.0" classifier "models"
 
   val gate = "uk.ac.gate" % "gate-core" % "8.4.1"
   //Test

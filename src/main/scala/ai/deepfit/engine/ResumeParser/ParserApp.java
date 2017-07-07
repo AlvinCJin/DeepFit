@@ -3,50 +3,28 @@ package ai.deepfit.engine.ResumeParser;
 /**
  * Created by alvinjin on 2017-07-01.
  */
-import gate.Annotation;
-import gate.AnnotationSet;
-import gate.Corpus;
-import gate.FeatureMap;
-import gate.Gate;
-import gate.Document;
+
+import gate.*;
 import gate.util.GateException;
 import gate.util.Out;
-import gate.Factory;
-import gate.creole.SerialAnalyserController;
-import static gate.Utils.*;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.Detector;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
 
-import com.google.gson.JsonObject;
+import java.io.*;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Iterator;
+
+import static gate.Utils.stringFor;
 
 public class ParserApp {
     private static File parseToHTMLUsingApacheTikka(String file)
@@ -87,8 +65,8 @@ public class ParserApp {
         }
     }
 
-    public static JSONObject loadGateAndAnnie(File file) throws GateException,
-            IOException {
+    public static JSONObject loadGateAndAnnie(File file) throws GateException, IOException {
+
         Out.prln("Initialising basic system...");
         //Gate.setGateHome(new File("path"));
         //Gate.setPluginsHome(new File("path"));
@@ -131,148 +109,169 @@ public class ParserApp {
             Iterator it;
             Annotation currAnnot;
 
-            // Name
-            curAnnSet = defaultAnnotSet.get("NameFinder");
-            if (curAnnSet.iterator().hasNext()) { // only one name will be
-                // found.
-                currAnnot = (Annotation) curAnnSet.iterator().next();
-                String gender = (String) currAnnot.getFeatures().get("gender");
-                if (gender != null && gender.length() > 0) {
-                    profileJSON.put("gender", gender);
-                }
-
-                // Needed name Features
-                JSONObject nameJson = new JSONObject();
-                String[] nameFeatures = new String[] { "firstName",
-                        "middleName", "surname" };
-                for (String feature : nameFeatures) {
-                    String s = (String) currAnnot.getFeatures().get(feature);
-                    if (s != null && s.length() > 0) {
-                        nameJson.put(feature, s);
-                    }
-                }
-                profileJSON.put("name", nameJson);
-            } // name
-
-            // title
-            curAnnSet = defaultAnnotSet.get("TitleFinder");
-            if (curAnnSet.iterator().hasNext()) { // only one title will be
-                // found.
-                currAnnot = (Annotation) curAnnSet.iterator().next();
-                String title = stringFor(doc, currAnnot);
-                if (title != null && title.length() > 0) {
-                    profileJSON.put("title", title);
-                }
-            }// title
-
-            // email,address,phone,url
-            String[] annSections = new String[] { "EmailFinder",
-                    "AddressFinder", "PhoneFinder", "URLFinder" };
-            String[] annKeys = new String[] { "email", "address", "phone",
-                    "url" };
-            for (short i = 0; i < annSections.length; i++) {
-                String annSection = annSections[i];
-                curAnnSet = defaultAnnotSet.get(annSection);
-                it = curAnnSet.iterator();
-                JSONArray sectionArray = new JSONArray();
-                while (it.hasNext()) { // extract all values for each
-                    // address,email,phone etc..
-                    currAnnot = (Annotation) it.next();
-                    String s = stringFor(doc, currAnnot);
-                    if (s != null && s.length() > 0) {
-                        sectionArray.add(s);
-                    }
-                }
-                if (sectionArray.size() > 0) {
-                    profileJSON.put(annKeys[i], sectionArray);
-                }
+            JSONObject basicJSON = getProfile(doc);
+            if (!basicJSON.isEmpty()) {
+                parsedJSON.put("basics", basicJSON);
             }
-            if (!profileJSON.isEmpty()) {
-                parsedJSON.put("basics", profileJSON);
-            }
+
 
             // awards,credibility,education_and_training,extracurricular,misc,skills,summary
             String[] otherSections = new String[] { "summary",
                     "education_and_training", "skills", "accomplishments",
                     "awards", "credibility", "extracurricular", "misc" };
             for (String otherSection : otherSections) {
-                curAnnSet = defaultAnnotSet.get(otherSection);
-                it = curAnnSet.iterator();
-                JSONArray subSections = new JSONArray();
-                while (it.hasNext()) {
-                    JSONObject subSection = new JSONObject();
-                    currAnnot = (Annotation) it.next();
-                    String key = (String) currAnnot.getFeatures().get(
-                            "sectionHeading");
-                    String value = stringFor(doc, currAnnot);
-                    if (!StringUtils.isBlank(key)
-                            && !StringUtils.isBlank(value)) {
-                        subSection.put(key, value);
-                    }
-                    if (!subSection.isEmpty()) {
-                        subSections.add(subSection);
-                    }
-                }
-                if (!subSections.isEmpty()) {
-                    parsedJSON.put(otherSection, subSections);
+
+                JSONArray sections = getSection(doc, otherSection);
+                if (!sections.isEmpty()) {
+                    parsedJSON.put(otherSection, sections);
                 }
             }
 
-            // work_experience
-            curAnnSet = defaultAnnotSet.get("work_experience");
-            it = curAnnSet.iterator();
-            JSONArray workExperiences = new JSONArray();
-            while (it.hasNext()) {
-                JSONObject workExperience = new JSONObject();
-                currAnnot = (Annotation) it.next();
-                String key = (String) currAnnot.getFeatures().get(
-                        "sectionHeading");
-                if (key.equals("work_experience_marker")) {
-                    // JSONObject details = new JSONObject();
-                    String[] annotations = new String[] { "date_start",
-                            "date_end", "jobtitle", "organization" };
-                    for (String annotation : annotations) {
-                        String v = (String) currAnnot.getFeatures().get(
-                                annotation);
-                        if (!StringUtils.isBlank(v)) {
-                            // details.put(annotation, v);
-                            workExperience.put(annotation, v);
-                        }
-                    }
-                    // if (!details.isEmpty()) {
-                    // workExperience.put("work_details", details);
-                    // }
-                    key = "text";
 
-                }
-                String value = stringFor(doc, currAnnot);
-                if (!StringUtils.isBlank(key) && !StringUtils.isBlank(value)) {
-                    workExperience.put(key, value);
-                }
-                if (!workExperience.isEmpty()) {
-                    workExperiences.add(workExperience);
-                }
+            JSONArray workExpJson = getWorkExp(doc);
 
-            }
-            if (!workExperiences.isEmpty()) {
-                parsedJSON.put("work_experience", workExperiences);
+            if (!workExpJson.isEmpty()) {
+                parsedJSON.put("work_experience", workExpJson);
             }
 
-        }// if
+        }
         Out.prln("Completed parsing...");
         return parsedJSON;
     }
 
-    public static void main(String[] args) {
-     /*   if (args.length == 0) {
-            System.err
-                    .println("USAGE: java ResumeParser <inputfile> <outputfile>");
-            return;
-        }*/
-        String inputFileName = "data/cv/Alvin_Indeed.pdf";//args[0];
-        String outputFileName = //(args.length == 2) ? args[1] :
-                "data/output/parsed_resume.json";
+    private static JSONArray getSection(Document doc, String header){
+        AnnotationSet curAnnSet = doc.getAnnotations().get(header);
+        Iterator it = curAnnSet.iterator();
+        JSONArray sections = new JSONArray();
+        while (it.hasNext()) {
+            JSONObject section = new JSONObject();
+            Annotation currAnnot = (Annotation) it.next();
+            String key = (String) currAnnot.getFeatures().get("sectionHeading");
+            String value = stringFor(doc, currAnnot);
+            if (!StringUtils.isBlank(key)
+                    && !StringUtils.isBlank(value)) {
+                section.put(key, value);
+            }
+            if (!section.isEmpty()) {
+                sections.add(section);
+            }
+        }
+        return sections;
+    }
 
+    private static JSONArray getWorkExp(Document doc){
+
+        AnnotationSet curAnnSet = doc.getAnnotations().get("work_experience");
+        Iterator it = curAnnSet.iterator();
+        JSONArray workExpsJson = new JSONArray();
+        while (it.hasNext()) {
+            JSONObject workExperience = new JSONObject();
+            Annotation currAnnot = (Annotation) it.next();
+            String key = (String) currAnnot.getFeatures().get(
+                    "sectionHeading");
+            if (key.equals("work_experience_marker")) {
+                // JSONObject details = new JSONObject();
+                String[] annotations = new String[] { "date_start",
+                        "date_end", "jobtitle", "organization" };
+                for (String annotation : annotations) {
+                    String v = (String) currAnnot.getFeatures().get(
+                            annotation);
+                    if (!StringUtils.isBlank(v)) {
+                        // details.put(annotation, v);
+                        workExperience.put(annotation, v);
+                    }
+                }
+                // if (!details.isEmpty()) {
+                // workExperience.put("work_details", details);
+                // }
+                key = "text";
+
+            }
+            String value = stringFor(doc, currAnnot);
+            if (!StringUtils.isBlank(key) && !StringUtils.isBlank(value)) {
+                workExperience.put(key, value);
+            }
+            if (!workExperience.isEmpty()) {
+                workExpsJson.add(workExperience);
+            }
+
+        }
+        return workExpsJson;
+
+    }
+
+    private static JSONObject getProfile(Document doc){
+
+        JSONObject profileJSON = new JSONObject();
+        // Name
+        AnnotationSet defaultAnnotSet = doc.getAnnotations();
+        AnnotationSet curAnnSet = defaultAnnotSet.get("NameFinder");
+        if (curAnnSet.iterator().hasNext()) { // only one name will be
+            // found.
+            Annotation currAnnot = (Annotation) curAnnSet.iterator().next();
+            String gender = (String) currAnnot.getFeatures().get("gender");
+            if (gender != null && gender.length() > 0) {
+                profileJSON.put("gender", gender);
+            }
+
+            // Needed name Features
+            JSONObject nameJson = new JSONObject();
+            String[] nameFeatures = new String[] { "firstName",
+                    "middleName", "surname" };
+            for (String feature : nameFeatures) {
+                String s = (String) currAnnot.getFeatures().get(feature);
+                if (s != null && s.length() > 0) {
+                    nameJson.put(feature, s);
+                }
+            }
+            profileJSON.put("name", nameJson);
+        } // name
+
+        // title
+        curAnnSet = defaultAnnotSet.get("TitleFinder");
+        if (curAnnSet.iterator().hasNext()) { // only one title will be
+            // found.
+            Annotation currAnnot = (Annotation) curAnnSet.iterator().next();
+            String title = stringFor(doc, currAnnot);
+            if (title != null && title.length() > 0) {
+                profileJSON.put("title", title);
+            }
+        }// title
+
+        // email,address,phone,url
+        String[] annSections = new String[] { "EmailFinder", "AddressFinder", "PhoneFinder", "URLFinder" };
+        String[] annKeys = new String[] { "email", "address", "phone", "url" };
+        for (short i = 0; i < annSections.length; i++) {
+            String annSection = annSections[i];
+            curAnnSet = defaultAnnotSet.get(annSection);
+            Iterator it = curAnnSet.iterator();
+            JSONArray sectionArray = new JSONArray();
+            while (it.hasNext()) { // extract all values for each
+                // address,email,phone etc..
+                Annotation currAnnot = (Annotation) it.next();
+                String s = stringFor(doc, currAnnot);
+                if (s != null && s.length() > 0) {
+                    sectionArray.add(s);
+                }
+            }
+            if (sectionArray.size() > 0) {
+                profileJSON.put(annKeys[i], sectionArray);
+            }
+        }
+
+        return profileJSON;
+
+
+    }
+
+
+    public static void main(String[] args) {
+
+        String inputFileName = "data/cv/Alvin_Indeed.pdf";
+
+        Path p = Paths.get(inputFileName);
+        String filename = p.getFileName().toString();
+        String outputFileName = "data/output/"+ FilenameUtils.removeExtension(filename) +".json";
         try {
             File tikkaConvertedFile = parseToHTMLUsingApacheTikka(inputFileName);
             if (tikkaConvertedFile != null) {
