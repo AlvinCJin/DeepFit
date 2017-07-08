@@ -67,33 +67,33 @@ public class ParserApp {
 
     public static JSONObject loadGateAndAnnie(File file) throws GateException, IOException {
 
-        Out.prln("Initialising basic system...");
+        Out.prln("Initialising Gate & ANNIE system...");
         //Gate.setGateHome(new File("path"));
         //Gate.setPluginsHome(new File("path"));
         Gate.init();
-        Out.prln("...basic system initialised");
 
         // initialise ANNIE (this may take several minutes)
         Annie annie = new Annie();
         annie.initAnnie();
 
-        // create a GATE corpus and add a document for each command-line
-        // argument
+        // create a GATE corpus and add a document
         Corpus corpus = Factory.newCorpus("Annie corpus");
-        String current = new File(".").getAbsolutePath();
-        URL u = file.toURI().toURL();
+
         FeatureMap params = Factory.newFeatureMap();
-        params.put("sourceUrl", u);
+        params.put("sourceUrl", file.toURI().toURL());
         params.put("preserveOriginalContent", new Boolean(true));
         params.put("collectRepositioningInfo", new Boolean(true));
-        Out.prln("Creating doc for " + u);
-        Document resume = (Document) Factory.createResource(
-                "gate.corpora.DocumentImpl", params);
+
+        Document resume = (Document) Factory.createResource("gate.corpora.DocumentImpl", params);
         corpus.add(resume);
 
         // tell the pipeline about the corpus and run it
         annie.setCorpus(corpus);
         annie.execute();
+
+        /**
+         * #############################################
+         */
 
         Iterator iter = corpus.iterator();
         JSONObject parsedJSON = new JSONObject();
@@ -101,41 +101,25 @@ public class ParserApp {
         // while (iter.hasNext()) {
         if (iter.hasNext()) { // should technically be while but I am just
             // dealing with one document
-            JSONObject profileJSON = new JSONObject();
+
             Document doc = (Document) iter.next();
-            AnnotationSet defaultAnnotSet = doc.getAnnotations();
 
-            AnnotationSet curAnnSet;
-            Iterator it;
-            Annotation currAnnot;
-
-            JSONObject basicJSON = getProfile(doc);
-            if (!basicJSON.isEmpty()) {
-                parsedJSON.put("basics", basicJSON);
-            }
-
+            JSONObject profileJSON = getProfile(doc);
+            parsedJSON.put("basics", profileJSON);
 
             // awards,credibility,education_and_training,extracurricular,misc,skills,summary
-            String[] otherSections = new String[] { "summary",
-                    "education_and_training", "skills", "accomplishments",
-                    "awards", "credibility", "extracurricular", "misc" };
+            String[] otherSections = new String[] { "summary", "education_and_training", "skills", "accomplishments", "awards", "misc" };
             for (String otherSection : otherSections) {
 
                 JSONArray sections = getSection(doc, otherSection);
-                if (!sections.isEmpty()) {
-                    parsedJSON.put(otherSection, sections);
-                }
-            }
+                parsedJSON.put(otherSection, sections);
 
+            }
 
             JSONArray workExpJson = getWorkExp(doc);
-
-            if (!workExpJson.isEmpty()) {
-                parsedJSON.put("work_experience", workExpJson);
-            }
+            parsedJSON.put("work_experience", workExpJson);
 
         }
-        Out.prln("Completed parsing...");
         return parsedJSON;
     }
 
@@ -148,13 +132,9 @@ public class ParserApp {
             Annotation currAnnot = (Annotation) it.next();
             String key = (String) currAnnot.getFeatures().get("sectionHeading");
             String value = stringFor(doc, currAnnot);
-            if (!StringUtils.isBlank(key)
-                    && !StringUtils.isBlank(value)) {
-                section.put(key, value);
-            }
-            if (!section.isEmpty()) {
-                sections.add(section);
-            }
+            section.put(key, value);
+
+            sections.add(section);
         }
         return sections;
     }
@@ -167,24 +147,18 @@ public class ParserApp {
         while (it.hasNext()) {
             JSONObject workExperience = new JSONObject();
             Annotation currAnnot = (Annotation) it.next();
-            String key = (String) currAnnot.getFeatures().get(
-                    "sectionHeading");
+            String key = (String) currAnnot.getFeatures().get("sectionHeading");
             if (key.equals("work_experience_marker")) {
-                // JSONObject details = new JSONObject();
-                String[] annotations = new String[] { "date_start",
-                        "date_end", "jobtitle", "organization" };
+
+                String[] annotations = new String[] { "date_start", "date_end", "jobtitle", "organization" };
                 for (String annotation : annotations) {
-                    String v = (String) currAnnot.getFeatures().get(
-                            annotation);
+                    String v = (String) currAnnot.getFeatures().get(annotation);
                     if (!StringUtils.isBlank(v)) {
-                        // details.put(annotation, v);
                         workExperience.put(annotation, v);
                     }
                 }
-                // if (!details.isEmpty()) {
-                // workExperience.put("work_details", details);
-                // }
-                key = "text";
+
+                key = "descriptions";
 
             }
             String value = stringFor(doc, currAnnot);
