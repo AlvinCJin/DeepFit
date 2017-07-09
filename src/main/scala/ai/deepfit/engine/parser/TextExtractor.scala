@@ -1,7 +1,7 @@
 package ai.deepfit.engine.parser
 
 import ai.deepfit.engine.config.Config
-import java.io.{File, FileInputStream, FileWriter, InputStream, PrintWriter}
+import java.io._
 
 import scala.collection.JavaConversions.asScalaIterator
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
@@ -22,7 +22,7 @@ object TextExtractor extends App with Config {
 
   val extractor = new TextExtractor()
   val idir = new File(cvInputPath)
-  val odir = new File(cvOutputPath)
+  val odir = new File(cvStagePath)
 
   extractor.extractDirToFiles(idir, odir, None)
 
@@ -73,7 +73,7 @@ class TextExtractor {
 
     try {
       istream = new FileInputStream(file)
-      val handler = new ToXMLContentHandler//new WriteOutContentHandler(-1)
+      val handler = new ToXMLContentHandler
       val metadata = new Metadata()
       val parser = parsers(detectFileType(file))
       val ctx = new ParseContext()
@@ -115,7 +115,6 @@ class TextExtractor {
 
     FileUtils.iterateFiles(dir, fileFilter,
       DirectoryFileFilter.DIRECTORY).foreach(file => {
-      Console.println("Parsing file: " + file.getName())
       val data = extract(file)
       renderer(file, odir, data)
       }
@@ -131,9 +130,8 @@ class TextExtractor {
 
   def renderDirToFiles(file: File, odir: File, data: Map[DocPart.Value, String]): Unit = {
 
-    //remove the original suffix and replaced by txt
-    val ext = FilenameUtils.getExtension(file.getName)
-    val ofname = file.getName().replaceAll(ext, "html")
+    val ofname = FilenameUtils.removeExtension(file.getName) + ".html"
+
     val writer = new PrintWriter(new FileWriter(new File(odir, ofname)), true)
 
     writer.println(data(DocPart.Body))

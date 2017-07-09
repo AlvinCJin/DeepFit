@@ -9,67 +9,34 @@ import gate.util.GateException;
 import gate.util.Out;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.sax.ToXMLContentHandler;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import java.io.*;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import static gate.Utils.stringFor;
 
 public class ParserApp {
-    private static File parseToHTMLUsingApacheTikka(String file)
-            throws IOException, SAXException, TikaException {
-        // determine extension
-        String ext = FilenameUtils.getExtension(file);
-        String outputFileFormat = "";
-        // ContentHandler handler;
-        if (ext.equalsIgnoreCase("html") | ext.equalsIgnoreCase("pdf")
-                | ext.equalsIgnoreCase("doc") | ext.equalsIgnoreCase("docx")) {
-            outputFileFormat = ".html";
-            // handler = new ToXMLContentHandler();
-        } else if (ext.equalsIgnoreCase("txt") | ext.equalsIgnoreCase("rtf")) {
-            outputFileFormat = ".txt";
-        } else {
-            System.out.println("Input format of the file " + file
-                    + " is not supported.");
-            return null;
-        }
-        String OUTPUT_FILE_NAME = FilenameUtils.removeExtension(file)
-                + outputFileFormat;
-        ContentHandler handler = new ToXMLContentHandler();
-        // ContentHandler handler = new BodyContentHandler();
-        // ContentHandler handler = new BodyContentHandler(
-        // new ToXMLContentHandler());
-        InputStream stream = new FileInputStream(file);
-        AutoDetectParser parser = new AutoDetectParser();
-        Metadata metadata = new Metadata();
-        try {
-            parser.parse(stream, handler, metadata);
-            FileWriter htmlFileWriter = new FileWriter(OUTPUT_FILE_NAME);
-            htmlFileWriter.write(handler.toString());
-            htmlFileWriter.flush();
-            htmlFileWriter.close();
-            return new File(OUTPUT_FILE_NAME);
-        } finally {
-            stream.close();
-        }
+
+    private static final Map<String, String> profileMap;
+
+    static {
+        profileMap = new HashMap<String, String>();
+        profileMap.put("NameFinder", "name");
+        profileMap.put("TitleFinder", "title");
+        profileMap.put("EmailFinder", "email");
+        profileMap.put("PhoneFinder", "phone");
+        //profileMap.put("AddressFinder", "address");
+        //profileMap.put("URLFinder", "url");
     }
 
     public static JSONObject loadGateAndAnnie(File file) throws GateException, IOException {
 
         Out.prln("Initialising Gate & ANNIE system...");
-        //Gate.setGateHome(new File("path"));
-        //Gate.setPluginsHome(new File("path"));
+        Gate.setGateHome(new File("GATEFiles"));
         Gate.init();
 
         // initialise ANNIE (this may take several minutes)
@@ -91,24 +58,18 @@ public class ParserApp {
         annie.setCorpus(corpus);
         annie.execute();
 
-        /**
-         * #############################################
-         */
-
         Iterator iter = corpus.iterator();
         JSONObject parsedJSON = new JSONObject();
         Out.prln("Started parsing...");
-        // while (iter.hasNext()) {
-        if (iter.hasNext()) { // should technically be while but I am just
-            // dealing with one document
+
+        if (iter.hasNext()) { // should technically be while but I am just dealing with one document
 
             Document doc = (Document) iter.next();
 
             JSONObject profileJSON = getProfile(doc);
             parsedJSON.put("basics", profileJSON);
 
-            // awards,credibility,education_and_training,extracurricular,misc,skills,summary
-            String[] otherSections = new String[] { "summary", "education_and_training", "skills", "accomplishments", "awards", "misc" };
+            String[] otherSections = new String[]{"summary", "education_and_training", "skills", "accomplishments", "awards", "misc"};
             for (String otherSection : otherSections) {
 
                 JSONArray sections = getSection(doc, otherSection);
@@ -123,34 +84,35 @@ public class ParserApp {
         return parsedJSON;
     }
 
-    private static JSONArray getSection(Document doc, String header){
+    private static JSONArray getSection(Document doc, String header) {
+
         AnnotationSet curAnnSet = doc.getAnnotations().get(header);
-        Iterator it = curAnnSet.iterator();
         JSONArray sections = new JSONArray();
-        while (it.hasNext()) {
+
+        curAnnSet.forEach(currAnnot -> {
             JSONObject section = new JSONObject();
-            Annotation currAnnot = (Annotation) it.next();
             String key = (String) currAnnot.getFeatures().get("sectionHeading");
             String value = stringFor(doc, currAnnot);
             section.put(key, value);
 
             sections.add(section);
-        }
+        });
+
         return sections;
     }
 
-    private static JSONArray getWorkExp(Document doc){
+    private static JSONArray getWorkExp(Document doc) {
 
         AnnotationSet curAnnSet = doc.getAnnotations().get("work_experience");
-        Iterator it = curAnnSet.iterator();
         JSONArray workExpsJson = new JSONArray();
-        while (it.hasNext()) {
+
+        curAnnSet.forEach(currAnnot -> {
+
             JSONObject workExperience = new JSONObject();
-            Annotation currAnnot = (Annotation) it.next();
             String key = (String) currAnnot.getFeatures().get("sectionHeading");
             if (key.equals("work_experience_marker")) {
 
-                String[] annotations = new String[] { "date_start", "date_end", "jobtitle", "organization" };
+                String[] annotations = new String[]{"date_start", "date_end", "jobtitle", "organization"};
                 for (String annotation : annotations) {
                     String v = (String) currAnnot.getFeatures().get(annotation);
                     if (!StringUtils.isBlank(v)) {
@@ -169,85 +131,44 @@ public class ParserApp {
                 workExpsJson.add(workExperience);
             }
 
-        }
+        });
+
         return workExpsJson;
 
     }
 
-    private static JSONObject getProfile(Document doc){
+
+    private static JSONObject getProfile(Document doc) {
 
         JSONObject profileJSON = new JSONObject();
-        // Name
         AnnotationSet defaultAnnotSet = doc.getAnnotations();
-        AnnotationSet curAnnSet = defaultAnnotSet.get("NameFinder");
-        if (curAnnSet.iterator().hasNext()) { // only one name will be
-            // found.
-            Annotation currAnnot = (Annotation) curAnnSet.iterator().next();
-            String gender = (String) currAnnot.getFeatures().get("gender");
-            if (gender != null && gender.length() > 0) {
-                profileJSON.put("gender", gender);
-            }
 
-            // Needed name Features
-            JSONObject nameJson = new JSONObject();
-            String[] nameFeatures = new String[] { "firstName",
-                    "middleName", "surname" };
-            for (String feature : nameFeatures) {
-                String s = (String) currAnnot.getFeatures().get(feature);
-                if (s != null && s.length() > 0) {
-                    nameJson.put(feature, s);
-                }
-            }
-            profileJSON.put("name", nameJson);
-        } // name
+        profileMap.forEach((annSection, name) -> {
 
-        // title
-        curAnnSet = defaultAnnotSet.get("TitleFinder");
-        if (curAnnSet.iterator().hasNext()) { // only one title will be
-            // found.
-            Annotation currAnnot = (Annotation) curAnnSet.iterator().next();
-            String title = stringFor(doc, currAnnot);
-            if (title != null && title.length() > 0) {
-                profileJSON.put("title", title);
-            }
-        }// title
-
-        // email,address,phone,url
-        String[] annSections = new String[] { "EmailFinder", "AddressFinder", "PhoneFinder", "URLFinder" };
-        String[] annKeys = new String[] { "email", "address", "phone", "url" };
-        for (short i = 0; i < annSections.length; i++) {
-            String annSection = annSections[i];
-            curAnnSet = defaultAnnotSet.get(annSection);
-            Iterator it = curAnnSet.iterator();
+            AnnotationSet curAnnSet = defaultAnnotSet.get(annSection);
             JSONArray sectionArray = new JSONArray();
-            while (it.hasNext()) { // extract all values for each
-                // address,email,phone etc..
-                Annotation currAnnot = (Annotation) it.next();
+
+            curAnnSet.forEach(currAnnot -> {
                 String s = stringFor(doc, currAnnot);
-                if (s != null && s.length() > 0) {
-                    sectionArray.add(s);
-                }
-            }
-            if (sectionArray.size() > 0) {
-                profileJSON.put(annKeys[i], sectionArray);
-            }
-        }
+                sectionArray.add(s);
+            });
+
+            profileJSON.put(name, sectionArray);
+        });
 
         return profileJSON;
-
 
     }
 
 
     public static void main(String[] args) {
 
-        String inputFileName = "data/cv/Alvin_Indeed.pdf";
+        String inputFileName = "data/cv/stage/Alvin_Indeed.html";
+        File f = new File(inputFileName);
 
-        Path p = Paths.get(inputFileName);
-        String filename = p.getFileName().toString();
-        String outputFileName = "data/output/"+ FilenameUtils.removeExtension(filename) +".json";
+        String outputFileName = "data/output/" + FilenameUtils.removeExtension(f.getName()) + ".json";
         try {
-            File tikkaConvertedFile = parseToHTMLUsingApacheTikka(inputFileName);
+            File tikkaConvertedFile = new File(inputFileName);
             if (tikkaConvertedFile != null) {
                 JSONObject parsedJSON = loadGateAndAnnie(tikkaConvertedFile);
 

@@ -14,6 +14,7 @@ trait Config {
   val checkpointDir = sparkConfig.getString("checkpointDir")
 
   val cvInputPath = appConfig.getString("cvInputPath")
+  val cvStagePath = appConfig.getString("cvStagePath")
   val cvOutputPath = appConfig.getString("cvOutputPath")
   val jdInputPath = appConfig.getString("jdInputPath")
 
