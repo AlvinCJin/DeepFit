@@ -8,7 +8,6 @@ import gate.*;
 import gate.util.GateException;
 import gate.util.Out;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -29,8 +28,6 @@ public class ParserApp {
         profileMap.put("TitleFinder", "title");
         profileMap.put("EmailFinder", "email");
         profileMap.put("PhoneFinder", "phone");
-        //profileMap.put("AddressFinder", "address");
-        //profileMap.put("URLFinder", "url");
     }
 
     public static JSONObject loadGateAndAnnie(File file) throws GateException, IOException {
@@ -69,16 +66,16 @@ public class ParserApp {
             JSONObject profileJSON = getProfile(doc);
             parsedJSON.put("basics", profileJSON);
 
-            String[] otherSections = new String[]{"summary", "education_and_training", "skills", "accomplishments", "awards", "misc"};
+            String[] otherSections = new String[]{"summary", "education_and_training", "skills", "accomplishments", "awards", "misc", "work_experience"};
             for (String otherSection : otherSections) {
 
                 JSONArray sections = getSection(doc, otherSection);
                 parsedJSON.put(otherSection, sections);
 
             }
-
-            JSONArray workExpJson = getWorkExp(doc);
-            parsedJSON.put("work_experience", workExpJson);
+            // Handle work experience the same way as the other sections, leave the subsections to the NER process
+           // JSONArray workExpJson = getWorkExp(doc);
+           // parsedJSON.put("work_experience", workExpJson);
 
         }
         return parsedJSON;
@@ -101,6 +98,7 @@ public class ParserApp {
         return sections;
     }
 
+    /*
     private static JSONArray getWorkExp(Document doc) {
 
         AnnotationSet curAnnSet = doc.getAnnotations().get("work_experience");
@@ -123,6 +121,7 @@ public class ParserApp {
                 key = "descriptions";
 
             }
+
             String value = stringFor(doc, currAnnot);
             if (!StringUtils.isBlank(key) && !StringUtils.isBlank(value)) {
                 workExperience.put(key, value);
@@ -135,7 +134,7 @@ public class ParserApp {
 
         return workExpsJson;
 
-    }
+    }*/
 
 
     private static JSONObject getProfile(Document doc) {
@@ -163,7 +162,7 @@ public class ParserApp {
 
     public static void main(String[] args) {
 
-        String inputFileName = "data/cv/stage/Alvin_Indeed.html";
+        String inputFileName = "data/cv/stage/Alvin_Latex.html";
         File f = new File(inputFileName);
 
         String outputFileName = "data/output/" + FilenameUtils.removeExtension(f.getName()) + ".json";
