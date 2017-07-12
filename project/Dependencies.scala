@@ -17,8 +17,15 @@ object Dependencies {
   val sparkML = "org.apache.spark" %% "spark-mllib" % versions("spark")
   val sparkKafka = "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % versions("spark")
 
+  val tikaParser =  "org.apache.tika" % "tika-parsers" % "1.15"
+  val tikaCore =  "org.apache.tika" % "tika-core" % "1.15"
 
   val config = "com.typesafe" % "config" % "1.3.1"
+
+  val corenlp = "edu.stanford.nlp" % "stanford-corenlp" % "3.8.0"
+  val corenlpModel = "edu.stanford.nlp" % "stanford-corenlp" % "3.8.0" classifier "models"
+
+  val gate = "uk.ac.gate" % "gate-core" % "8.4.1"
   //Test
   val specsCore = "org.specs2" %% "specs2-core" % "3.6.4"
   val specsJunit = "org.specs2" %% "specs2-junit" % "3.6.4"
@@ -36,9 +43,12 @@ object Dependencies {
 
   val test = Seq(specsCore, specsJunit, scalaTest)
 
-  val utils = Seq(config)
 
-  val mainDeps = spark ++ utils
+  val nlp = Seq(corenlp, corenlpModel, gate)
+
+  val utils = Seq(tikaParser, tikaCore, config)
+
+  val mainDeps = spark ++ nlp ++ utils
 
   val testDeps = test
 
