@@ -12,7 +12,7 @@ import org.apache.tika.parser.{AutoDetectParser, ParseContext, Parser}
 import org.apache.tika.parser.microsoft.OfficeParser
 import org.apache.tika.parser.pdf.PDFParser
 import org.apache.tika.parser.txt.TXTParser
-import org.apache.tika.sax.{ToXMLContentHandler, WriteOutContentHandler}
+import org.apache.tika.sax.WriteOutContentHandler
 
 
 /**
@@ -73,7 +73,7 @@ class TextExtractor {
 
     try {
       istream = new FileInputStream(file)
-      val handler = new ToXMLContentHandler
+      val handler = new WriteOutContentHandler(-1)//ToXMLContentHandler
       val metadata = new Metadata()
       val parser = parsers(detectFileType(file))
       val ctx = new ParseContext()
@@ -130,7 +130,7 @@ class TextExtractor {
 
   def renderDirToFiles(file: File, odir: File, data: Map[DocPart.Value, String]): Unit = {
 
-    val ofname = FilenameUtils.removeExtension(file.getName) + ".html"
+    val ofname = FilenameUtils.removeExtension(file.getName) + ".txt"
 
     val writer = new PrintWriter(new FileWriter(new File(odir, ofname)), true)
 

@@ -36,24 +36,20 @@ public class Annie  {
 
         // load the ANNIE application from the saved state in plugins/ANNIE
         File gateHome = Gate.getGateHome();
-        //File anniePlugin = new File(pluginsHome, "ANNIE");
-        //TODO: Change to relative path
-        //File annieGapp = new File(anniePlugin, "C:\\Users\\antonydeepak\\Documents\\workspace\\Programming_Workspace\\project_workspace\\ResumeParser\\ResumeParser_git\\ResumeParser\\GATEFiles\\ANNIEResumeParser.gapp");
         File annieGapp = new File(gateHome, "ANNIEResumeParser.gapp");
         annieController = (CorpusController) PersistenceManager.loadObjectFromFile(annieGapp);
 
-        Out.prln("...processing engine loaded");
-    } // initAnnie()
+    }
 
     /** Tell ANNIE's controller about the corpus you want to run on */
     public void setCorpus(Corpus corpus) {
         annieController.setCorpus(corpus);
-    } // setCorpus
+    }
 
     /** Run ANNIE */
     public void execute() throws GateException {
         Out.prln("Running processing engine...");
         annieController.execute();
         Out.prln("...processing engine complete");
-    } // execute()
-} // class Annie
+    }
+}
