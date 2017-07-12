@@ -5,16 +5,14 @@ package ai.deepfit.engine.ResumeParser;
  */
 
 import gate.*;
+import gate.Document;
 import gate.util.GateException;
 import gate.util.Out;
-import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import static gate.Utils.stringFor;
 
@@ -30,7 +28,7 @@ public class ParserApp {
         profileMap.put("PhoneFinder", "phone");
     }
 
-    public static JSONObject loadGateAndAnnie(File file) throws GateException, IOException {
+    public static List<JSONObject> loadGateAndAnnie(List<File> files) throws GateException, IOException {
 
         Out.prln("Initialising Gate & ANNIE system...");
         Gate.setGateHome(new File("GATEFiles"));
@@ -43,42 +41,47 @@ public class ParserApp {
         // create a GATE corpus and add a document
         Corpus corpus = Factory.newCorpus("Annie corpus");
 
-        FeatureMap params = Factory.newFeatureMap();
-        params.put("sourceUrl", file.toURI().toURL());
-        params.put("preserveOriginalContent", new Boolean(true));
-        params.put("collectRepositioningInfo", new Boolean(true));
+        List<Document> resumes = new ArrayList<>();
+        for (File file : files) {
+            FeatureMap params = Factory.newFeatureMap();
+            params.put("sourceUrl", file.toURI().toURL());
+            params.put("preserveOriginalContent", new Boolean(true));
+            params.put("collectRepositioningInfo", new Boolean(true));
 
-        Document resume = (Document) Factory.createResource("gate.corpora.DocumentImpl", params);
-        corpus.add(resume);
+            Document resume = (Document) Factory.createResource("gate.corpora.DocumentImpl", params);
+            resumes.add(resume);
+        }
+
+        corpus.addAll(resumes);
 
         // tell the pipeline about the corpus and run it
         annie.setCorpus(corpus);
         annie.execute();
 
         Iterator iter = corpus.iterator();
-        JSONObject parsedJSON = new JSONObject();
+        List<JSONObject> results = new ArrayList<>();//JSONObject();
         Out.prln("Started parsing...");
 
-        if (iter.hasNext()) { // should technically be while but I am just dealing with one document
+        while (iter.hasNext()) { // should technically be while but I am just dealing with one document
 
+            JSONObject cvJson = new JSONObject();
             Document doc = (Document) iter.next();
 
             JSONObject profileJSON = getProfile(doc);
-            parsedJSON.put("basics", profileJSON);
+            cvJson.put("basics", profileJSON);
 
-            String[] otherSections = new String[]{"summary", "education_and_training", "skills", "accomplishments", "awards", "misc", "work_experience"};
+            String[] otherSections = new String[]{"education_and_training", "skills", "accomplishments", "work_experience", "misc"};
             for (String otherSection : otherSections) {
 
                 JSONArray sections = getSection(doc, otherSection);
-                parsedJSON.put(otherSection, sections);
+                cvJson.put(otherSection, sections);
 
             }
-            // Handle work experience the same way as the other sections, leave the subsections to the NER process
-           // JSONArray workExpJson = getWorkExp(doc);
-           // parsedJSON.put("work_experience", workExpJson);
+
+            results.add(cvJson);
 
         }
-        return parsedJSON;
+        return results;
     }
 
     private static JSONArray getSection(Document doc, String header) {
@@ -98,47 +101,10 @@ public class ParserApp {
         return sections;
     }
 
-    /*
-    private static JSONArray getWorkExp(Document doc) {
-
-        AnnotationSet curAnnSet = doc.getAnnotations().get("work_experience");
-        JSONArray workExpsJson = new JSONArray();
-
-        curAnnSet.forEach(currAnnot -> {
-
-            JSONObject workExperience = new JSONObject();
-            String key = (String) currAnnot.getFeatures().get("sectionHeading");
-            if (key.equals("work_experience_marker")) {
-
-                String[] annotations = new String[]{"date_start", "date_end", "jobtitle", "organization"};
-                for (String annotation : annotations) {
-                    String v = (String) currAnnot.getFeatures().get(annotation);
-                    if (!StringUtils.isBlank(v)) {
-                        workExperience.put(annotation, v);
-                    }
-                }
-
-                key = "descriptions";
-
-            }
-
-            String value = stringFor(doc, currAnnot);
-            if (!StringUtils.isBlank(key) && !StringUtils.isBlank(value)) {
-                workExperience.put(key, value);
-            }
-            if (!workExperience.isEmpty()) {
-                workExpsJson.add(workExperience);
-            }
-
-        });
-
-        return workExpsJson;
-
-    }*/
-
 
     private static JSONObject getProfile(Document doc) {
 
+        System.out.println(doc.getName());
         JSONObject profileJSON = new JSONObject();
         AnnotationSet defaultAnnotSet = doc.getAnnotations();
 
@@ -162,22 +128,31 @@ public class ParserApp {
 
     public static void main(String[] args) {
 
-        String inputFileName = "data/cv/stage/Alvin_Latex.html";
-        File f = new File(inputFileName);
+        String inputDir = "data/cv/stage/";
+        File dir = new File(inputDir);
+        List<File> fileList = Arrays.asList(dir.listFiles());
+        String outputDir = "data/cv/output/";
 
-        String outputFileName = "data/output/" + FilenameUtils.removeExtension(f.getName()) + ".json";
         try {
-            File tikkaConvertedFile = new File(inputFileName);
-            if (tikkaConvertedFile != null) {
-                JSONObject parsedJSON = loadGateAndAnnie(tikkaConvertedFile);
 
-                Out.prln("Writing to output...");
-                FileWriter jsonFileWriter = new FileWriter(outputFileName);
-                jsonFileWriter.write(parsedJSON.toJSONString());
-                jsonFileWriter.flush();
-                jsonFileWriter.close();
-                Out.prln("Output written to file " + outputFileName);
-            }
+            List<JSONObject> parsedJSON = loadGateAndAnnie(fileList);
+
+            parsedJSON.forEach(json -> {
+
+                String outputFileName = outputDir + UUID.randomUUID() + ".json";
+                try {
+                    FileWriter jsonFileWriter = new FileWriter(outputFileName);
+                    jsonFileWriter.write(json.toJSONString());
+                    jsonFileWriter.flush();
+                    jsonFileWriter.close();
+
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    System.out.println("Sad Face :( .Something went wrong.");
+                    e.printStackTrace();
+                }
+            });
+
 
         } catch (Exception e) {
             // TODO Auto-generated catch block
