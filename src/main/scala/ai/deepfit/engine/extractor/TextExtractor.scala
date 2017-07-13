@@ -1,4 +1,4 @@
-package ai.deepfit.engine.parser
+package ai.deepfit.engine.extractor
 
 import ai.deepfit.engine.config.Config
 import java.io._

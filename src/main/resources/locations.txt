@@ -1,0 +1,4 @@
+Bachelor of (Arts|Laws|Science|Engineering|Divinity)	DEGREE
+MBA	DEGREE
+( /University/ /of/ [ {ner:LOCATION} ] )	ORGANIZATION
+( [ {ner:DATE} ] [ {ner:DATE} ] )	DATE

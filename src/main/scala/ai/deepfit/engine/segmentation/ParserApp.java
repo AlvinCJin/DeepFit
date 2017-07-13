@@ -1,4 +1,4 @@
-package ai.deepfit.engine.ResumeParser;
+package ai.deepfit.engine.segmentation;
 
 /**
  * Created by alvinjin on 2017-07-01.
