@@ -1,4 +1,4 @@
-Bachelor of (Arts|Laws|Science|Engineering|Divinity)	DEGREE
+(Bachelor|Master) of .*	DEGREE
 MBA	DEGREE
-( /University/ /of/ [ {ner:LOCATION} ] )	ORGANIZATION
-( [ {ner:DATE} ] [ {ner:DATE} ] )	DATE
+( /University/ /of/ [ner:LOCATION] )	ORGANIZATION
+( ([ ner:DATE ]+) /(-|to)/ ([ ner:DATE ]+) )	DURATION	DATE

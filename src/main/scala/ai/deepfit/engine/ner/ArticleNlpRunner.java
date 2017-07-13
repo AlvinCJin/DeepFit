@@ -47,8 +47,9 @@ public class ArticleNlpRunner {
 
 
         String[] tests =
-                {       "York University - Schulich School of Business, MBA, Marketing, from April 2010 April 2011",
-                        "In April 2013, Changjiu Jin was in London University in 2010. He was studying in University of Waterloo during 2010-2013.",
+                {       "Master of Mathematics in Hadoop, Cassandra, Distributed Systems. School of Computer Science, University of Waterloo from 2010 to 2013.",
+                        "York University - Schulich School of Business, MBA, Marketing, from April 2010 - June 2011.",
+                        "In April 2013, Changjiu Jin was in School of Computer Science, London University in 2010. He was studying in University of Waterloo during 2010-2013.",
                         "Partial invoice (€100,000, so roughly 40%) for the consignment C27655 we shipped on 15th August to London from the Bachelor of Arts depot. INV2345 is for the balance.. Customer contact (Sigourney) says they will pay this on the usual credit terms (30 days)."
                 };
 
@@ -83,6 +84,7 @@ public class ArticleNlpRunner {
                     String word = token.get(TextAnnotation.class);
                     currNe = token.get(NamedEntityTagAnnotation.class);
 
+                    System.out.println(word + " : " + currNe + " -> " + prevNe);
                     // Strip out "O"s completely, makes code below easier to understand
                    if (currNe.equals("O")) {
                         // LOG.debug("Skipping '{}' classified as {}", word, currNeToken);
