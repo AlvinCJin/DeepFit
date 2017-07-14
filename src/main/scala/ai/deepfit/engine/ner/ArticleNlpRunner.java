@@ -3,7 +3,7 @@ package ai.deepfit.engine.ner;
 /**
  * Created by alvinjin on 2017-07-12.
  */
-import java.io.PrintWriter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -22,32 +22,27 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
 
 
-/**
- * Some simple unit tests for the CoreNLP NER (http://nlp.stanford.edu/software/CRF-NER.shtml) short
- * article.
- *
- * @author hsheil
- *
- */
 public class ArticleNlpRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(ArticleNlpRunner.class);
 
     @Test
     public void basic() {
-        LOG.debug("Starting Stanford NLP");
 
-        // creates a StanfordCoreNLP object, with POS tagging, lemmatization, NER, parsing, and
+        String rules = "rules/cv.rules.txt";
+
         Properties props = new Properties();
-
-        props.put("annotators", "tokenize, ssplit, pos, lemma, ner, regexner");
+        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,tokensregexdemo, regexner");
+        props.setProperty("customAnnotatorClass.tokensregexdemo", "edu.stanford.nlp.pipeline.TokensRegexNERAnnotator");
+        props.setProperty("tokensregexdemo.rules", rules);
         props.put("regexner.mapping", "locations.txt");
 
         StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 
 
         String[] tests =
-                {       "Master of Mathematics in Hadoop, Cassandra, Distributed Systems. School of Computer Science, University of Waterloo from 2010 to 2013.",
+                {       "Contact: http://alvincjin.blogspot.com Email: alvincjin@gmail.com cellphone: 647-636-3476.",
+                        "Master of Mathematics in Hadoop, Cassandra, Distributed Systems. School of Computer Science University of Waterloo from 2010 to 2013.",
                         "York University - Schulich School of Business, MBA, Marketing, from April 2010 - June 2011.",
                         "In April 2013, Changjiu Jin was in School of Computer Science, London University in 2010. He was studying in University of Waterloo during 2010-2013.",
                         "Partial invoice (€100,000, so roughly 40%) for the consignment C27655 we shipped on 15th August to London from the Bachelor of Arts depot. INV2345 is for the balance.. Customer contact (Sigourney) says they will pay this on the usual credit terms (30 days)."
@@ -87,7 +82,7 @@ public class ArticleNlpRunner {
                     System.out.println(word + " : " + currNe + " -> " + prevNe);
                     // Strip out "O"s completely, makes code below easier to understand
                    if (currNe.equals("O")) {
-                        // LOG.debug("Skipping '{}' classified as {}", word, currNeToken);
+
                         if (!prevNe.equals("O") && (sb.length() > 0)) {
                             handleEntity(prevNe, sb, tokens); //process the new entity group
                             newToken = true;
@@ -115,13 +110,15 @@ public class ArticleNlpRunner {
                 }
             }
 
-            //TODO - do some cool stuff with these tokens!
-            LOG.info("We extracted {} tokens of interest from the input text", tokens.size());
         }
+        System.out.println("######################################");
+        for (EmbeddedToken token : tokens) {
+            System.out.println(token.getName()+" "+token.getValue());
+        }
+
     }
     private void handleEntity(String label, StringBuilder sb, List tokens) {
-        System.out.println(sb +" "+ label);
-        tokens.add(new EmbeddedToken(label, sb.toString()));
+        tokens.add(new EmbeddedToken(sb.toString(), label));
         sb.setLength(0);
     }
 
