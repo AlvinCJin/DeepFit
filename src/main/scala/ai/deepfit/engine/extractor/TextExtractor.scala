@@ -10,6 +10,7 @@ import org.apache.tika.exception.TikaException
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.apache.tika.parser.{AutoDetectParser, ParseContext, Parser}
 import org.apache.tika.parser.microsoft.OfficeParser
+import org.apache.tika.parser.ocr.TesseractOCRParser
 import org.apache.tika.parser.pdf.PDFParser
 import org.apache.tika.parser.txt.TXTParser
 import org.apache.tika.sax.WriteOutContentHandler
@@ -21,8 +22,8 @@ import org.apache.tika.sax.WriteOutContentHandler
 object TextExtractor extends App with Config {
 
   val extractor = new TextExtractor()
-  val idir = new File(cvInputPath)
-  val odir = new File(cvStagePath)
+  val idir = new File("data/receipt/input")//(cvInputPath)
+  val odir = new File("data/receipt/output")//(cvStagePath)
 
   extractor.extractDirToFiles(idir, odir, None)
 
@@ -32,7 +33,7 @@ class TextExtractor {
 
   object FileType extends Enumeration {
     type FileType = Value
-    val Text, Xml, Pdf, MsWord, Undef = Value
+    val Text, Xml, Pdf, MsWord, Png, Jpeg, Undef = Value
   }
 
   object DocPart extends Enumeration {
@@ -44,6 +45,8 @@ class TextExtractor {
     (FileType.Text, new TXTParser()),
     (FileType.Pdf, new PDFParser()),
     (FileType.MsWord, new OfficeParser()),
+    (FileType.Png, new TesseractOCRParser()),
+    (FileType.Jpeg, new TesseractOCRParser()),
     (FileType.Undef, new AutoDetectParser())
   )
 
@@ -99,6 +102,8 @@ class TextExtractor {
       case "text" | "txt" => FileType.Text
       case "pdf" => FileType.Pdf
       case "doc" | "docx" => FileType.MsWord
+      case "png"          => FileType.Png
+      case "jpg" | "jpeg" => FileType.Jpeg
       case _ => FileType.Undef
     }
   }
