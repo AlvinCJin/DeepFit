@@ -1,4 +1,6 @@
 (Bachelor|Master) of .*	DEGREE
 MBA	DEGREE
-( /University/ /of/ [ner:LOCATION] )	ORGANIZATION
+Lead	TITLE
+( (University|School|College) /of/ [ner:LOCATION] )	ORGANIZATION
 ( ([ ner:DATE ]+) /(-|to)/ ([ ner:DATE ]+) )	DURATION	DATE
+( ([ pos:NNP ]+) ([ner:TITLE]) )	TITLE

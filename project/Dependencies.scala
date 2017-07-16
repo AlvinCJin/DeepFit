@@ -17,8 +17,8 @@ object Dependencies {
   val sparkML = "org.apache.spark" %% "spark-mllib" % versions("spark")
   val sparkKafka = "org.apache.spark" % "spark-streaming-kafka-0-10_2.11" % versions("spark")
 
-  val tikaParser =  "org.apache.tika" % "tika-parsers" % "1.15"
-  val tikaCore =  "org.apache.tika" % "tika-core" % "1.15"
+  val tikaParser =  "org.apache.tika" % "tika-parsers" % "1.16"
+  val tikaCore =  "org.apache.tika" % "tika-core" % "1.16"
 
   val config = "com.typesafe" % "config" % "1.3.1"
 

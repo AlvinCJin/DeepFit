@@ -24,7 +24,6 @@ import edu.stanford.nlp.util.CoreMap;
 
 public class ArticleNlpRunner {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ArticleNlpRunner.class);
 
     @Test
     public void basic() {
@@ -41,7 +40,9 @@ public class ArticleNlpRunner {
 
 
         String[] tests =
-                {       "Contact: http://alvincjin.blogspot.com Email: alvincjin@gmail.com cellphone: 647-636-3476.",
+                {
+                        "Alvin was born on October 2000, 2010 to Present, 2010 to Now.",
+                        "Data Platform Tech Lead, Senior Data Scientist, Intern, Software Development Engineer, Contact: http://alvincjin.blogspot.com Email: alvincjin@gmail.com cellphone: 647-636-3476.",
                         "Master of Mathematics in Hadoop, Cassandra, Distributed Systems. School of Computer Science University of Waterloo from 2010 to 2013.",
                         "York University - Schulich School of Business, MBA, Marketing, from April 2010 - June 2011.",
                         "In April 2013, Changjiu Jin was in School of Computer Science, London University in 2010. He was studying in University of Waterloo during 2010-2013.",
@@ -78,6 +79,7 @@ public class ArticleNlpRunner {
 
                     String word = token.get(TextAnnotation.class);
                     currNe = token.get(NamedEntityTagAnnotation.class);
+                    //String tag = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
 
                     System.out.println(word + " : " + currNe + " -> " + prevNe);
                     // Strip out "O"s completely, makes code below easier to understand
