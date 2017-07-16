@@ -27,7 +27,7 @@ public class CustomTermAnnotator implements Annotator {
 
     public void annotate(Annotation annotation) {
         for (CoreLabel token : annotation.get(CoreAnnotations.TokensAnnotation.class)) {
-            String term = wordToTag.getOrDefault(token.word(), token.ner());
+            String term = wordToTag.getOrDefault(token.word().toLowerCase(), token.ner());
             token.set(CoreAnnotations.NamedEntityTagAnnotation.class, term);
         }
     }

@@ -1,2 +1,3 @@
-Cassandra	TECHTERM
-Hadoop	TECHTERM
+cassandra	TECHTERM
+hadoop	TECHTERM
+spark	TECHTERM
