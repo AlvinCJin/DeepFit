@@ -1,0 +1,74 @@
+package ai.deepfit.engine.ner;
+
+/**
+ * Created by alvinjin on 2017-07-13.
+ */
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+import java.util.Properties;
+
+import edu.stanford.nlp.io.IOUtils;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.util.CoreMap;
+
+public class TokensRegexAnnotatorDemo {
+
+    public static void main(String[] args) throws IOException {
+        PrintWriter out = new PrintWriter(System.out);
+
+        String rules = "rules/colors.rules.txt";
+
+        /*if (args.length > 0) {
+            rules = args[0];
+        } else {
+            rules = "rules/colors.rules.txt";
+        }
+        if (args.length > 2) {
+            out = new PrintWriter(args[2]);
+        } else {
+            out = new PrintWriter(System.out);
+        }*/
+
+        Properties properties = new Properties();
+        properties.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,tokensregexdemo");
+        properties.setProperty("customAnnotatorClass.tokensregexdemo", "edu.stanford.nlp.pipeline.TokensRegexNERAnnotator");
+        properties.setProperty("tokensregexdemo.rules", rules);
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(properties);
+        Annotation annotation;
+        if (args.length > 1) {
+            annotation = new Annotation(IOUtils.slurpFileNoExceptions(args[1]));
+        } else {
+            annotation = new Annotation("Alvin was born on Oct 2013 Bachelor of Science Both blue and light blue are nice colors.");
+        }
+
+        pipeline.annotate(annotation);
+
+        // An Annotation is a Map and you can get and use the various analyses individually.
+        out.println();
+        // The toString() method on an Annotation just prints the text of the Annotation
+        // But you can see what is in it with other methods like toShorterString()
+        out.println("The top level annotation");
+        out.println(annotation.toShorterString());
+
+        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+            // NOTE: Depending on what tokensregex rules are specified, there are other annotations
+            //       that are of interest other than just the tokens and what we print out here
+            for (CoreLabel token:sentence.get(CoreAnnotations.TokensAnnotation.class)) {
+                // Print out words, lemma, ne, and normalized ne
+                String word = token.get(CoreAnnotations.TextAnnotation.class);
+                String lemma = token.get(CoreAnnotations.LemmaAnnotation.class);
+                String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+                String ne = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
+                String normalized = token.get(CoreAnnotations.NormalizedNamedEntityTagAnnotation.class);
+                out.println("token: " + "word="+word + ", lemma="+lemma + ", pos=" + pos + ", ne=" + ne + ", normalized=" + normalized);
+            }
+        }
+        out.flush();
+    }
+
+}

@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.NamedEntityTagAnnotation;
@@ -22,18 +20,21 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
 
 
-public class ArticleNlpRunner {
+public class CombinedNERApp {
 
 
-    @Test
-    public void basic() {
-
+    //@Test
+    //public void basic() {
+    public static void main(String[] args){
         String rules = "rules/cv.rules.txt";
 
         Properties props = new Properties();
-        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,tokensregexdemo, regexner");
+        props.setProperty("annotators", "tokenize,ssplit,pos,lemma, ner, techterm, tokensregexdemo, regexner");
         props.setProperty("customAnnotatorClass.tokensregexdemo", "edu.stanford.nlp.pipeline.TokensRegexNERAnnotator");
         props.setProperty("tokensregexdemo.rules", rules);
+        props.setProperty("customAnnotatorClass.techterm", "ai.deepfit.engine.annotator.CustomTermAnnotator");
+        props.setProperty("custom.techterm.file", "rules/techterm.txt");
+
         props.put("regexner.mapping", "locations.txt");
 
         StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
@@ -45,8 +46,8 @@ public class ArticleNlpRunner {
                         "Data Platform Tech Lead, Senior Data Scientist, Intern, Software Development Engineer, Contact: http://alvincjin.blogspot.com Email: alvincjin@gmail.com cellphone: 647-636-3476.",
                         "Master of Mathematics in Hadoop, Cassandra, Distributed Systems. School of Computer Science University of Waterloo from 2010 to 2013.",
                         "York University - Schulich School of Business, MBA, Marketing, from April 2010 - June 2011.",
-                        "In April 2013, Changjiu Jin was in School of Computer Science, London University in 2010. He was studying in University of Waterloo during 2010-2013.",
-                        "Partial invoice (€100,000, so roughly 40%) for the consignment C27655 we shipped on 15th August to London from the Bachelor of Arts depot. INV2345 is for the balance.. Customer contact (Sigourney) says they will pay this on the usual credit terms (30 days)."
+                        "In April 2013, Changjiu Jin was in School of Computer Science, London University in 2010. College of Toronto, University of Waterloo during 2010-2013.",
+                        "Partial invoice (€100,000, so roughly 40%) for the consignment C27655 we shipped on 15th August to Waterloo from the Bachelor of Arts depot. INV2345 is for the balance.. Customer contact (Sigourney) says they will pay this on the usual credit terms (30 days)."
                 };
 
         List<EmbeddedToken> tokens = new ArrayList<>();
@@ -119,13 +120,14 @@ public class ArticleNlpRunner {
         }
 
     }
-    private void handleEntity(String label, StringBuilder sb, List tokens) {
+
+    private static void handleEntity(String label, StringBuilder sb, List tokens) {
         tokens.add(new EmbeddedToken(sb.toString(), label));
         sb.setLength(0);
     }
 
-
 }
+
 class EmbeddedToken {
 
     private String name;
