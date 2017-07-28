@@ -22,8 +22,9 @@ import org.apache.tika.sax.WriteOutContentHandler
 object TextExtractor extends App with Config {
 
   val extractor = new TextExtractor()
-  val idir = new File("data/receipt/input")//(cvInputPath)
-  val odir = new File("data/receipt/output")//(cvStagePath)
+  val idir = new File("data/receipt/input")
+  //(cvInputPath)
+  val odir = new File("data/receipt/output") //(cvStagePath)
 
   extractor.extractDirToFiles(idir, odir, None)
 
@@ -76,7 +77,7 @@ class TextExtractor {
 
     try {
       istream = new FileInputStream(file)
-      val handler = new WriteOutContentHandler(-1)//ToXMLContentHandler
+      val handler = new WriteOutContentHandler(-1) //ToXMLContentHandler
       val metadata = new Metadata()
       val parser = parsers(detectFileType(file))
       val ctx = new ParseContext()
@@ -102,7 +103,7 @@ class TextExtractor {
       case "text" | "txt" => FileType.Text
       case "pdf" => FileType.Pdf
       case "doc" | "docx" => FileType.MsWord
-      case "png"          => FileType.Png
+      case "png" => FileType.Png
       case "jpg" | "jpeg" => FileType.Jpeg
       case _ => FileType.Undef
     }
@@ -112,18 +113,18 @@ class TextExtractor {
     * pattern. Accepts a renderer function to convert name-
     * value pairs into an output file (or files). */
   def extract(dir: File, pattern: Option[String], odir: File,
-              renderer: (File, File, Map[DocPart.Value, String]) => Unit): Unit ={
+              renderer: (File, File, Map[DocPart.Value, String]) => Unit): Unit = {
     val fileFilter = pattern match {
       case None => new WildcardFileFilter("*.*")
       case _ => new WildcardFileFilter(pattern.get)
     }
 
-    FileUtils.iterateFiles(dir, fileFilter,
-      DirectoryFileFilter.DIRECTORY).foreach(file => {
-      val data = extract(file)
-      renderer(file, odir, data)
+    FileUtils.iterateFiles(dir, fileFilter, DirectoryFileFilter.DIRECTORY)
+      .foreach(file => {
+        val data = extract(file)
+        renderer(file, odir, data)
       }
-    )
+      )
   }
 
   /** Convenience method to write out text extracted from a file
