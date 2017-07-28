@@ -1,7 +1,7 @@
 package ai.deepfit.engine.app
 
 import ai.deepfit.engine.config.Config
-import ai.deepfit.engine.parser.TextExtractor
+import ai.deepfit.engine.extractor.TextExtractor
 import java.io._
 
 import org.apache.spark.sql.SparkSession

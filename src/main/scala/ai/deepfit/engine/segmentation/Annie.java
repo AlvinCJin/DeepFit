@@ -1,17 +1,13 @@
-package ai.deepfit.engine.ResumeParser;
+package ai.deepfit.engine.segmentation;
 
 /**
  * Created by alvinjin on 2017-07-01.
  */
-import java.util.*;
 import java.io.*;
-import java.net.*;
 
 import gate.*;
-import gate.creole.*;
 import gate.util.*;
 import gate.util.persistence.PersistenceManager;
-import gate.corpora.RepositioningInfo;
 
 /**
  * This class illustrates how to use ANNIE as a sausage machine
